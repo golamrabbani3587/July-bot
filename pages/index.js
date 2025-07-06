@@ -10,45 +10,38 @@ export default function Home() {
   const [userInput, setUserInput] = useState("");
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile devices on page load
   useEffect(() => {
     if (/Mobi|Android/i.test(navigator.userAgent)) {
-      setIsMobile(true); // Set as mobile if on a mobile device
-      requestSpeechPermission(); // Request permission on mobile
+      setIsMobile(true);
+      requestSpeechPermission();
     }
   }, []);
 
-  // Request permission for speech synthesis on mobile
   const requestSpeechPermission = () => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(
         "Please allow speech synthesis to work."
       );
-      window.speechSynthesis.speak(utterance); // Start speech to trigger permission request
+      window.speechSynthesis.speak(utterance);
     }
   };
-
-  // Speak Text Function (Start speaking immediately after user starts speaking)
   const speakText = (text) => {
     if ("speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(text);
 
       utterance.onstart = () => {
-        setIsSpeaking(true); // Speech has started
+        setIsSpeaking(true);
       };
 
       utterance.onend = () => {
-        setIsSpeaking(false); // Speech has finished
+        setIsSpeaking(false);
       };
-
-      // Start speech synthesis immediately after text is received
       window.speechSynthesis.speak(utterance);
     } else {
       alert("Text-to-speech not supported in your browser.");
     }
   };
 
-  // Get OpenAI Response
   const getOpenAIResponse = async (question) => {
     const res = await fetch("/api/ask", {
       method: "POST",
@@ -60,19 +53,14 @@ export default function Home() {
     return data.answer || "Sorry, I couldn't understand that.";
   };
 
-  // Typing animation function (simulate typing while speaking)
   const typeMessage = async (fullText) => {
     setTyping(true);
     let currentText = "";
-
-    // Start speech synthesis immediately as text is received
     speakText(fullText);
-
-    // Simulate typing animation
     for (let i = 0; i < fullText.length; i++) {
       currentText += fullText[i];
       setChatMessages((prev) => [...prev.slice(0, -1), `🤖 ${currentText}_`]);
-      await new Promise((r) => setTimeout(r, 25)); // Adjust speed of typing animation
+      await new Promise((r) => setTimeout(r, 25));
     }
 
     setChatMessages((prev) => [...prev.slice(0, -1), `🤖 ${fullText}`]);
@@ -99,13 +87,11 @@ export default function Home() {
 
           const answer = await getOpenAIResponse(text);
           setChatMessages((prev) => [...prev, "🤖"]);
-          await typeMessage(answer); // Start typing animation and speaking immediately
+          await typeMessage(answer);
         };
       }
     }
   }, []);
-
-  // Toggle Listening Function (Speech Recognition)
   const toggleListening = () => {
     if (!recognitionRef.current) {
       alert("Speech recognition is not supported in this browser.");
@@ -128,7 +114,7 @@ export default function Home() {
       setUserInput("");
       const answer = await getOpenAIResponse(userInput);
       setChatMessages((prev) => [...prev, "🤖"]);
-      await typeMessage(answer); // Start typing animation and speaking immediately
+      await typeMessage(answer);
     }
   };
 
