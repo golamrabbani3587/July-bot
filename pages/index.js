@@ -7,20 +7,48 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState([]);
   const [typing, setTyping] = useState(false);
   const recognitionRef = useRef(null);
+  const [userInput, setUserInput] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
 
-  const speakText = (text) => {
+  // Detect mobile devices on page load
+  useEffect(() => {
+    if (/Mobi|Android/i.test(navigator.userAgent)) {
+      setIsMobile(true); // Set as mobile if on a mobile device
+      requestSpeechPermission(); // Request permission on mobile
+    }
+  }, []);
+
+  // Request permission for speech synthesis on mobile
+  const requestSpeechPermission = () => {
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      setIsSpeaking(true);
-      window.speechSynthesis.speak(utterance);
-      utterance.onend = () => {
-        setIsSpeaking(false);
-      };
-    } else {
-      alert("Text-to-speech not supported.");
+      const utterance = new SpeechSynthesisUtterance(
+        "Please allow speech synthesis to work."
+      );
+      window.speechSynthesis.speak(utterance); // Start speech to trigger permission request
     }
   };
 
+  // Speak Text Function (Start speaking immediately after user starts speaking)
+  const speakText = (text) => {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      utterance.onstart = () => {
+        setIsSpeaking(true); // Speech has started
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false); // Speech has finished
+      };
+
+      // Start speech synthesis immediately after text is received
+      window.speechSynthesis.speak(utterance);
+    } else {
+      alert("Text-to-speech not supported in your browser.");
+    }
+  };
+
+  // Get OpenAI Response
   const getOpenAIResponse = async (question) => {
     const res = await fetch("/api/ask", {
       method: "POST",
@@ -32,22 +60,19 @@ export default function Home() {
     return data.answer || "Sorry, I couldn't understand that.";
   };
 
+  // Typing animation function (simulate typing while speaking)
   const typeMessage = async (fullText) => {
     setTyping(true);
     let currentText = "";
-    let spoken = false;
 
-    const utterance = new SpeechSynthesisUtterance(fullText);
-    if ("speechSynthesis" in window) {
-      setIsSpeaking(true);
-      window.speechSynthesis.speak(utterance);
-      utterance.onend = () => setIsSpeaking(false);
-    }
+    // Start speech synthesis immediately as text is received
+    speakText(fullText);
 
+    // Simulate typing animation
     for (let i = 0; i < fullText.length; i++) {
       currentText += fullText[i];
       setChatMessages((prev) => [...prev.slice(0, -1), `🤖 ${currentText}_`]);
-      await new Promise((r) => setTimeout(r, 25));
+      await new Promise((r) => setTimeout(r, 25)); // Adjust speed of typing animation
     }
 
     setChatMessages((prev) => [...prev.slice(0, -1), `🤖 ${fullText}`]);
@@ -74,12 +99,13 @@ export default function Home() {
 
           const answer = await getOpenAIResponse(text);
           setChatMessages((prev) => [...prev, "🤖"]);
-          await typeMessage(answer);
+          await typeMessage(answer); // Start typing animation and speaking immediately
         };
       }
     }
   }, []);
 
+  // Toggle Listening Function (Speech Recognition)
   const toggleListening = () => {
     if (!recognitionRef.current) {
       alert("Speech recognition is not supported in this browser.");
@@ -94,6 +120,18 @@ export default function Home() {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (userInput.trim()) {
+      setChatMessages([...chatMessages, userInput]);
+      setUserInput("");
+      const answer = await getOpenAIResponse(userInput);
+      setChatMessages((prev) => [...prev, "🤖"]);
+      await typeMessage(answer); // Start typing animation and speaking immediately
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-sky-100">
       {/* Header */}
@@ -102,7 +140,7 @@ export default function Home() {
           🤖 Welcome to <span className="text-sky-600">July BOT</span>
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Ask anything July Revolution
+          Ask anything about the July Revolution
         </p>
       </header>
 
@@ -120,7 +158,21 @@ export default function Home() {
                   : "bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600"
               }`}
             >
-              🎤
+              {/* Microphone SVG Icon with Animation */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-12 h-12 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v4m4 4v4a4 4 0 01-8 0V12m4-4a4 4 0 014 4v4a4 4 0 01-8 0V8a4 4 0 014-4z"
+                />
+              </svg>
             </button>
 
             <p className="mt-4 text-gray-600 text-sm transition-all duration-300">
@@ -172,23 +224,36 @@ export default function Home() {
             })}
           </div>
           <div className="p-4 border-t border-gray-200">
-            <input
-              type="text"
-              placeholder="Type your question..."
-              className="border border-gray-300 rounded-xl px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              disabled={typing}
-              onKeyDown={async (e) => {
-                if (e.key === "Enter" && e.target.value.trim()) {
-                  const userText = e.target.value.trim();
-                  setChatMessages([...chatMessages, userText]);
-                  e.target.value = "";
-
-                  const answer = await getOpenAIResponse(userText);
-                  setChatMessages((prev) => [...prev, "🤖"]);
-                  await typeMessage(answer);
-                }
-              }}
-            />
+            <form onSubmit={handleSubmit} className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Ask me something..."
+                className="border border-gray-300 rounded-xl px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                disabled={typing}
+              />
+              <button
+                type="submit"
+                className="bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 focus:outline-none"
+              >
+                {/* Microphone Icon for Submit */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4v4m4 4v4a4 4 0 01-8 0V12m4-4a4 4 0 014 4v4a4 4 0 01-8 0V8a4 4 0 014-4z"
+                  />
+                </svg>
+              </button>
+            </form>
           </div>
         </div>
       </div>
