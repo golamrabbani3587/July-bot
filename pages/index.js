@@ -119,7 +119,63 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-sky-100">
+    <>
+      {/* Enhanced Modal Overlay to disable the page, with transparent background */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "linear-gradient(135deg, rgba(99,102,241,0.65) 0%, rgba(14,165,233,0.65) 100%)",
+          zIndex: 9999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2vw",
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            padding: "3rem 2rem",
+            borderRadius: "2rem",
+            boxShadow: "0 8px 40px rgba(30, 41, 59, 0.25)",
+            textAlign: "center",
+            maxWidth: "480px",
+            width: "100%",
+            minWidth: "0",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <div style={{
+            background: "#e0e7ff",
+            borderRadius: "50%",
+            width: "80px",
+            height: "80px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "1.5rem",
+            boxShadow: "0 2px 12px rgba(99, 102, 241, 0.15)",
+          }}>
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#6366f1" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+          </div>
+          <h2 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "1rem", color: "#1e293b", letterSpacing: "-0.02em" }}>
+            End of Test
+          </h2>
+          <p style={{ fontSize: "1.15rem", color: "#334155", marginBottom: "2rem" }}>
+            For further queries, please contact:<br />
+            <a href="mailto:golamrabbani3587@gmail.com" style={{ color: "#2563eb", textDecoration: "underline", fontWeight: 600 }}>golamrabbani3587@gmail.com</a>
+          </p>
+        </div>
+      </div>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 to-sky-100">
       {/* Header */}
       <header className="w-full text-center py-6 bg-white shadow-sm border-b border-gray-100">
         <h1 className="text-3xl font-bold text-indigo-600">
@@ -244,5 +300,6 @@ export default function Home() {
         </div>
       </div>
     </div>
+    </>
   );
 }
